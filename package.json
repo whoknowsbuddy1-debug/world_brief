@@ -4,10 +4,12 @@
   "description": "World Brief: daily news carousels and Reels for @worldbrief_official",
   "scripts": {
     "render": "node engine/render.js",
-    "ig": "node scripts/ig.js"
+    "ig": "node scripts/ig.js",
+    "post": "node scripts/ig-web.js"
   },
   "dependencies": {
     "ffmpeg-static": "^5.2.0",
-    "puppeteer": "^24.0.0"
+    "puppeteer": "^24.0.0",
+    "playwright": "^1.49.0"
   }
 }

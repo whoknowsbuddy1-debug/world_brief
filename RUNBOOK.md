@@ -10,15 +10,18 @@ You are posting to the Instagram news page **@worldbrief_official** ("World Brie
   - Never use Getty, Reuters, AP, PTI or ANI photos, screenshots of news sites, or AI-generated images of real people.
   - Download into `engine/img/` and use `${img('name.jpg')}`. Put the credit line on slide 1 (the `credit` div) and in the caption.
 - **Music (Reels):** always `engine/music/living-voyage.oga` ("Living Voyage" by Kevin MacLeod, CC BY 3.0). Vary the start time: 0, 20, 38, 60, 90 or 120 s. Caption credit: `Music: "Living Voyage" by Kevin MacLeod (incompetech.com), licensed under CC BY 3.0`
-- **Secrets:** the Instagram token is only in the environment variable `IG_TOKEN`. Never print it, echo it, write it to a file or commit it.
+- **Secrets:** the Instagram login is only in the environment variables `IG_USERNAME` and `IG_PASSWORD`. Never print them, echo them, write them to a file or commit them.
 - **Learning:** read `LEARNINGS.md` first and follow its rules.
 
 ## Setup (each run)
 ```bash
-npm install --no-audit --no-fund   # installs puppeteer (its own Chrome) and ffmpeg-static
-node scripts/ig.js me              # must print @worldbrief_official; if it fails, stop and report the error
-node scripts/ig.js recent 15       # what was posted recently: do NOT repeat a story from the last 2 days
+npm install --no-audit --no-fund                 # puppeteer (slides), ffmpeg-static (Reels), playwright (posting)
+npx playwright install --with-deps chromium        # browser used to post
+node scripts/ig-web.js check                       # must print loggedIn: true
 ```
+If `check` exits with code 3, Instagram wants the owner to approve the login. **Stop**, post nothing, and finish with: "Instagram needs you to approve a login: open the Instagram app → approve 'Was this you?'". Never retry the login more than once per run.
+
+Then open https://www.instagram.com/worldbrief_official/ (run `node scripts/ig-web.js recent 15`) and don't repeat a story posted in the last 2 days.
 
 ## Slot types
 | Slot (IST) | Format | Topic |
@@ -43,11 +46,7 @@ node scripts/ig.js recent 15       # what was posted recently: do NOT repeat a s
    - Reel: `OUT=media JPG=1 REEL=1 POST=<key> node engine/render.js`
 4. Check every slide by viewing the images: no overlapping or cut-off text, masthead visible. Fix and re-render if needed.
 5. Reel only: `bash engine/make-reel.sh media/<key> engine/music/living-voyage.oga media/<key>/reel.mp4 <start>`
-6. Make the files public:
-   - `git add media/<key> engine/render.js engine/img && git commit -m "World Brief <key>"`, then push.
-   - Use the branch the session is allowed to push to. Note its name as BRANCH.
-   - Public URL: `https://raw.githubusercontent.com/whoknowsbuddy1-debug/world_brief/<BRANCH>/media/<key>/<file>`
-   - Check with `curl -sI <url>` that it returns 200 before posting; wait 20 s and retry if not.
+6. Commit the new post files: `git add media/<key> engine/render.js engine/img && git commit -m "World Brief <key>"`, then push to the branch the session may push to.
 7. Write the caption to `media/<key>/caption.txt`:
    - Hook line with 1 emoji, then 3–4 bullets, then "🇮🇳 Why it matters for India: …"
    - A question to drive comments, plus "Share this with someone who needs to know 📤"
@@ -55,20 +54,15 @@ node scripts/ig.js recent 15       # what was posted recently: do NOT repeat a s
    - "Follow @worldbrief_official for daily world news in 60 seconds."
    - 5–6 hashtags: #WorldBrief, 2 topic tags and 2 broad tags (#IndiaNews #WorldNews #TamilNadu etc.)
 8. Publish:
-   - Carousel: `node scripts/ig.js carousel media/<key>/caption.txt <url slide-1.jpg> … <url slide-N.jpg>`
-   - Reel: `node scripts/ig.js reel media/<key>/caption.txt <url reel.mp4> <url slide-1.jpg>`
+   - Carousel: `node scripts/ig-web.js carousel media/<key>/caption.txt media/<key>/slide-1.jpg … media/<key>/slide-N.jpg`
+   - Reel: `node scripts/ig-web.js reel media/<key>/caption.txt media/<key>/reel.mp4`
+   - If it fails (not code 3), look at the screenshot in `media/_debug/` and retry once.
 9. Final message: 2 lines with the topic and permalink. If anything failed, give the exact error.
 
-## Comment run (3 times a day)
-1. `node scripts/ig.js comments 3` lists comments we haven't answered.
-2. For each one, write a reply to a temp file and run `node scripts/ig.js reply <commentId> <file>`.
-   - Keep it 1–2 lines, friendly and factual, in the commenter's language (English, Tamil, Hindi or Tanglish).
-   - Answer the question, add one fact, or ask a follow-up question.
-   - Never argue, take sides, insult or reply to abuse. Skip spam.
-3. Then run the breaking-news check described above.
-4. On Mondays and Thursdays, also run `node scripts/ig.js refresh` so the token never expires.
+## Breaking-news run (3 times a day)
+Run the breaking-news check described above. Comment replies are done from the owner's laptop session when it's open.
 
 ## Growth review (every 3 days, in the 9 pm run)
-1. Run `node scripts/ig.js recent 20` and compare views, reach, shares, saves and comments.
+1. Open each of the last 15 posts with the browser (`scripts/ig-web.js recent 15` for links) and note the likes, comments and views shown.
 2. Find the best and worst 3 posts. Write 3–5 concrete rules (topic, hook style, time, slide count) into `LEARNINGS.md`, then commit and push.
 3. Apply those rules from the next post on.
