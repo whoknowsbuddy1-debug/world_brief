@@ -1,0 +1,13 @@
+{
+  "name": "world-brief",
+  "private": true,
+  "description": "World Brief: daily news carousels and Reels for @worldbrief_official",
+  "scripts": {
+    "render": "node engine/render.js",
+    "ig": "node scripts/ig.js"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0",
+    "puppeteer": "^24.0.0"
+  }
+}
